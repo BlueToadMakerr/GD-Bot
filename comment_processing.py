@@ -3,7 +3,6 @@ import time
 
 # --- HELPER FUNCTIONS ---
 def enforce_deletion(c_id, log_message, bot_ctx):
-   """Deletes a comment, tracks it as processed, and flags state change."""
    print(f"[!] {log_message}")
    bot_ctx["delete_comment"](c_id, bot_ctx)
 

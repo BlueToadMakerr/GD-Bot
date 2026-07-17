@@ -1,3 +1,4 @@
 bot_config.json
 __pycache__/
 .env
+push.sh
