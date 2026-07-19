@@ -8,7 +8,6 @@ def enforce_deletion(c_id, log_message, bot_ctx):
 
 # Comment Processing
 def old_comments(bot_ctx, comment_data, user_data, comment_id, sender_player_id, sender_username):
-    from main import vlog
     now = time.time()
     # Check if the user is banned
     bans = bot_ctx["state"].setdefault("bans", {})
@@ -17,7 +16,7 @@ def old_comments(bot_ctx, comment_data, user_data, comment_id, sender_player_id,
             enforce_deletion(comment_id, f"Player {sender_player_id} is banned. Deleting comment {comment_id}...", bot_ctx)
             return True # Returning true will tell the main script to skip everything else
         else:
-            vlog(f"Ban expired for Player ID {sender_player_id}. Removing...")
+            bot_ctx["vlog"](f"Ban expired for Player ID {sender_player_id}. Removing...")
             del bans[sender_player_id]
            
     # Dislike delete
@@ -29,7 +28,6 @@ def old_comments(bot_ctx, comment_data, user_data, comment_id, sender_player_id,
             return True
 
 def new_comments(bot_ctx, comment_data, user_data, comment_id, sender_player_id, sender_username):
-    from main import vlog
     now = time.time()
 
     # Check if the user is muted
@@ -39,7 +37,7 @@ def new_comments(bot_ctx, comment_data, user_data, comment_id, sender_player_id,
             enforce_deletion(comment_id, f"Player {sender_player_id} is muted. Deleting comment {comment_id}...", bot_ctx)
             return True
         else:
-            vlog(f"Mute expired for Player ID {sender_player_id}. Removing...")
+            bot_ctx["vlog"](f"Mute expired for Player ID {sender_player_id}. Removing...")
             del mutes[sender_player_id]
 
     # Random events!

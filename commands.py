@@ -337,7 +337,7 @@ def handle_deop(tokens, bot_ctx, comment_data, user_data, comment_id, sender_id,
     if len(tokens) < 2: return "Usage: /deop <player_name>"
     
     target = tokens[1].lower()
-    if target == bot_ctx['BOT_OWNER']: return "Error: Cannot deop the owner."
+    if target.lower() == bot_ctx['BOT_OWNER'].lower(): return "Error: Cannot deop the owner."
     
     admins = bot_ctx["state"].get("admins", [])
     for admin in admins:

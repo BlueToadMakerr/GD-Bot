@@ -9,6 +9,7 @@ import commands
 import comment_processing
 import traceback
 import random
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -150,7 +151,70 @@ def login_to_gd():
         print(f"Network error during login: {e}")
         return False
 
+def check_gd_errors(res_text, bot_ctx):
+    res_lower = res_text.lower()
+    
+    if "error 1020" in res_lower:
+        if not bot_ctx.get("is_rate_limited"):
+            print("[-] We are being rate limited by Cloudflare! Bot is going inactive...")
+            bot_ctx["is_rate_limited"] = True
+        return "1020"
+
+    # If the response isn't a 1020 and we were rate limited before, let the user know!
+    if bot_ctx.get("is_rate_limited"):
+        print("[+] A request went through! We are no longer rate limited!!! :3")
+        bot_ctx["is_rate_limited"] = False
+
+    # These are comment bans
+    if res_text == "-10":
+        print("[-] Account is comment banned by RobTop! No comments from the bot will post. (Tell the chatroom!)")
+        bot_ctx["state"]["comment_banned_forever"] = True
+        return "banned"
+
+    if res_text.startswith("temp_"):
+        # Format should be temp_{time}_{reason} ({player_id})
+        match = re.match(r"^temp_(\d+)_(.*?)(?:\s*\(([^)]+)\))?$", res_text)
+        if match:
+            ban_time, reason, pid = match.groups()
+            reason = reason.strip()
+            
+            # 1. Are we perma banned?
+            is_perma = (ban_time == "3020399")
+            
+            # 2. Who was banned? IP or Account
+            our_uuid = str(bot_ctx["session"]["uuid"])
+            is_ip_ban = bool(pid and pid != our_uuid)
+            
+            # 3. Build the log message
+            ban_length_str = "permanently banned" if is_perma else f"banned for {ban_time}s"
+            target_str = "IP" if is_ip_ban else "Account"
+            
+            log_msg = f"[-] {target_str} is {ban_length_str} from commenting! (Reason: '{reason}')"
+            if is_ip_ban:
+                log_msg += f" Caused by Player ID: {pid} (Our ID: {our_uuid})."
+                
+            print(log_msg)
+            
+            # 4. Update the bot's state
+            if is_perma:
+                bot_ctx["state"]["comment_banned_forever"] = True
+            else:
+                bot_ctx["state"]["comment_banned_until"] = time.time() + int(ban_time)
+                
+        else:
+            print(f"[-] We were banned.. but dont know why... (Server returned: {res_text}) Comment sleeping for 5 mins..")
+            bot_ctx["state"]["comment_banned_until"] = time.time() + 300 # 5 min timeout!
+            
+        return "banned"
+        
+    return "ok"
+
 def upload_comment(text, bot_ctx):
+    if bot_ctx["state"].get("comment_banned_forever"):
+        return True # Fail silently...
+    if bot_ctx["state"].get("comment_banned_until", 0) > time.time():
+        return True
+    
     url = f"{GD_API_BASE_URL}/uploadGJComment21.php"
     b64_comment = base64.urlsafe_b64encode(text.encode('utf-8')).decode('utf-8')
     target_level_id = LEVEL_ID
@@ -178,7 +242,16 @@ def upload_comment(text, bot_ctx):
         vlog(f"Uploading comment: {text}")
         res = requests.post(url, data=payload, headers=HEADERS).text.strip()
         vlog(f"Upload response: {res}")
-        return res != "-1" and res.isdigit()
+        err_status = check_gd_errors(res, bot_ctx)
+        if err_status == "1020":
+            return False
+        elif err_status == "banned":
+            return True # We pretend it works so it doesnt keep retrying in the queue
+        if res == "-1":
+            return False
+        if res.isdigit() and int(res) > 0:
+            return True
+        return False
     except Exception as e:
         print(f"[-] Error uploading comment: {e}")
         return False
@@ -222,8 +295,10 @@ def check_and_handle_commands(bot_ctx):
         response = requests.post(url, data=payload, headers=bot_ctx["HEADERS"])
         res_text = response.text.strip().split('#')[0]
         
-        if not res_text or res_text == "-1" or res_text.startswith("temp_"):
-            vlog(f"No comments returned or the server has rate limited you... (Returned: {res_text}).")
+        if check_gd_errors(res_text, bot_ctx) != "ok":
+            return False, False
+        if not res_text:
+            vlog(f"No comments returned...")
             return False, False
             
         comment_lines = res_text.split('|')
@@ -317,6 +392,8 @@ def main():
         "DVS": DVS,
         "state": load_bot_state(),
         "delete_comment": delete_comment,
+        "vlog": vlog,
+        "is_rate_limited": False,
         "level_id": LEVEL_ID,
         "GD_USERNAME": GD_USERNAME,
         "GD_PASSWORD": GD_PASSWORD,
@@ -333,6 +410,8 @@ def main():
         last_upload_time = handle_outbound_queue(bot_ctx, current_time, last_upload_time)
         
         is_active = (current_time - last_activity_time) <= ACTIVE_DURATION or len(bot_ctx["state"]["response_queue"]) > 0
+        if bot_ctx.get("is_rate_limited"):
+            is_active = False
         
         if found_cmd or found_new:
             last_activity_time = time.time()

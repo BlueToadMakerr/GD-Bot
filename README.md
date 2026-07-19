@@ -3,7 +3,7 @@ Ever wanted to moderate your Geometry Dash chat rooms? No? Well too bad!
 
 This python script will allow you to create a bot and have it listen for commands!
 
-You can ban people, delete comments, create random events, moderate people, and so much more!
+You can ban people, delete comments, create random events, moderate users, and so much more!
 
 
 ## Installing
@@ -82,7 +82,7 @@ Commands only admins can use!
 | `/delete` | `/delete <comment_id>` | Deletes an explicit comment by its comment ID. |
 | `/dislikedelete` | `/dislikedelete <amount>` | A setting telling how many dislikes a comment needs to auto-delete. Use `0` to disable. |
 | `/updatedesc` | `/updatedesc <string>` | Edits and updates the chatroom's description. |
-| `/updatelvl` | `/updatelvl <level_id\|revert>` | Clones the givven level to the current level. |
+| `/updatelvl` | `/updatelvl <level_id\|revert>` | Clones the given level to the current level. |
 | `/confirm` | `/confirm` | Confirms a command (currently just `/updatelvl`) |
 | `/cancel` | `/cancel` | Cancels a command (currently just `/updatelvl`) |
 | `/login` | `/login` | DMs the bots credentals to the admin running the command. |
@@ -103,7 +103,7 @@ To create a new command, open `commands.py` and add the `@command` decorator abo
 @command(
     name="/mycommand", 
     usage="/mycommand <arg1>", 
-    desc="Explain what your new command achieves here."
+    desc="Explain what your command does here."
 )
 def handle_mycommand(tokens, bot_ctx, comment_data, user_data, comment_id, sender_id, sender_username):
     # 1. (Optional) Make the command only available for admins
@@ -122,7 +122,7 @@ def handle_mycommand(tokens, bot_ctx, comment_data, user_data, comment_id, sende
 
 ```
 
-### Proccessing commands
+### Proccessing comments
 
 To proccess comments, open `comment_processing.py` and add code to either `old_comments()` or `new_comments()`. Use the perameters (See below) to see who sent that comment.
 
@@ -138,7 +138,7 @@ This runs code on only newly indexed comments. Currently this does the following
 
 Mute Enforcement: If a new comment is detected from a muted player, that players comments will be deleted
 
-Random Events: New comments have a 1 in 1000 chance of triggering an event. When triggered, a message ()"[Username] is a cutie! >w<") is posted to the level chat.
+Random Events: New comments have a 1 in 1000 chance of triggering an "event". When triggered, a message `"[Username] is a cutie! >w<"` is posted to the level chat.
 
 ---
 
@@ -147,7 +147,7 @@ Random Events: New comments have a 1 in 1000 chance of triggering an event. When
 * `tokens`: Arguments the user used. For example `["/mute", "RobTop", "1d"]`.
 * `bot_ctx`: A lot more data about the bot itself, can be used to get the bots username and password, owner, state, and run functions like `bot_ctx["delete_comment"]()`. Look inside main.py for more info.
 * `comment_data` & `user_data`: The data about the comment and user themselves. Like the account id of the user running it, or their icon.
-* `sender_id` & `sender_username`: Premade vars containing the users ID and username.'
+* `sender_id` & `sender_username`: Premade vars containing the users ID and username.
 
 ---
 
