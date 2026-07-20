@@ -28,7 +28,7 @@ OWNER_USERNAME = os.getenv("OWNER_USERNAME")
 OWNER_PLAYER_ID = os.getenv("OWNER_PLAYER_ID")
 
 # --- VERBOSE LOGGING ---
-VERBOSE_LOGS = False
+VERBOSE_LOGS = True
 
 # --- CONFIG FILE ---
 STATE_FILE = "bot_config.json"
