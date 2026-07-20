@@ -1,4 +1,5 @@
 import random
+import base64
 import time
 
 # --- HELPER FUNCTIONS ---
@@ -39,6 +40,26 @@ def new_comments(bot_ctx, comment_data, user_data, comment_id, sender_player_id,
         else:
             bot_ctx["vlog"](f"Mute expired for Player ID {sender_player_id}. Removing...")
             del mutes[sender_player_id]
+
+    # Repeats!
+    repeat_amount = bot_ctx["state"].get("repeat_comment", 0)
+    if repeat_amount > 0:
+        comment_text = base64.b64decode(comment_data.get('2', '')).decode("utf-8").strip()
+        if comment_text:
+            streak_text = bot_ctx["state"].get("repeat_streak_text", "")
+            streak_count = bot_ctx["state"].get("repeat_streak_count", 0)
+            if comment_text == streak_text:
+                streak_count += 1 # Keeping the streak alive!
+            else:
+                streak_text = comment_text
+                streak_count = 1 # New/diffrent comment.. reset the streak
+            # Trigger repeat!
+            if streak_count >= repeat_amount:
+                print(f"[!] Repeat threshold ({repeat_amount}x) reached for '{comment_text}'! Queueing response...")
+                bot_ctx["state"]["response_queue"].append(comment_text)
+                streak_count = 0
+            bot_ctx["state"]["repeat_streak_text"] = streak_text
+            bot_ctx["state"]["repeat_streak_count"] = streak_count               
 
     # Random events!
     rng = random.randint(1, 1000)

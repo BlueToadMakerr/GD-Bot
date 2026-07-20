@@ -64,6 +64,7 @@ Admins can trigger commands inside the level's comment section by using a forwar
 | `/mutelist` | `/mutelist [username]` | Lists currently muted players and their remaining duration. |
 | `/banlist` | `/banlist [username]` | Lists currently banned players and their remaining duration. |
 | `/oplist` | `/oplist` | Lists all op'd players |
+| `/repeat` | `/repeat <amount>` | How many times something is repeated for the bot to join. |
 
 ### Administrative Commands
 
@@ -137,6 +138,8 @@ Dislike deleting: If the configured dislike threshold is active (dislike_thresho
 This runs code on only newly indexed comments. Currently this does the following, but you can add more functions!
 
 Mute Enforcement: If a new comment is detected from a muted player, that players comments will be deleted
+
+Repeats: If a new comment is repeated x amount of times (repeat_comment), The bot will also repeat it and join in!
 
 Random Events: New comments have a 1 in 1000 chance of triggering an "event". When triggered, a message `"[Username] is a cutie! >w<"` is posted to the level chat.
 

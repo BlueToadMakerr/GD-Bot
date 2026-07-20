@@ -486,6 +486,23 @@ def handle_oplist(tokens, bot_ctx, comment_data, user_data, comment_id, sender_i
         lines.append(f"{username}")
     return "Admins: " + ", ".join(lines) if lines else "OP list empty..."
 
+@command("/repeat", "/repeat <amount>", "Set how many times a comment must be repeated before the bot repeats it.")
+def handle_dislikedelete(tokens, bot_ctx, comment_data, user_data, comment_id, sender_id, sender_username):
+    if len(tokens) < 2: 
+        current = bot_ctx["state"].get("repeat_comment", 0)
+        return f"Usage: /repeat <amount> (Current: {current})"
+    
+    try:
+        amount = int(tokens[1])
+        if amount < 0:
+            return "Error: This is a negitives number.. no negitives pls :3 Use 0 to disable."
+        bot_ctx["state"]["repeat_comment"] = amount
+        if amount == 0:
+            return "Success: Comment repeating is disabled."
+        return f"Success: If a comment is repeated {amount} times, the bot will join in!"
+    except ValueError:
+        return "Error: That isn't a valid number!"
+
 @command("/updatelvl", "/updatelvl <level_id|revert>", "Updates this level or reverts to the last version.")
 def handle_updatelvl(tokens, bot_ctx, comment_data, user_data, comment_id, sender_id, sender_username):
     if not is_admin(sender_id, bot_ctx): 

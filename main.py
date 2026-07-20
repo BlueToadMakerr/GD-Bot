@@ -168,12 +168,12 @@ def check_gd_errors(res_text, bot_ctx):
     # These are comment bans
     if res_text == "-10":
         print("[-] Account is comment banned by RobTop! No comments from the bot will post. (Tell the chatroom!)")
-        bot_ctx["state"]["comment_banned_forever"] = True
+        bot_ctx["comment_banned_forever"] = True
         return "banned"
 
     if res_text.startswith("temp_"):
         # Format should be temp_{time}_{reason} ({player_id})
-        match = re.match(r"^temp_(\d+)_(.*?)(?:\s*\(([^)]+)\))?$", res_text)
+        match = re.match(r"^temp_(\d+)_(.*?)(?:\s+\((\d+)\))?$", res_text)
         if match:
             ban_time, reason, pid = match.groups()
             reason = reason.strip()
@@ -197,9 +197,9 @@ def check_gd_errors(res_text, bot_ctx):
             
             # 4. Update the bot's state
             if is_perma:
-                bot_ctx["state"]["comment_banned_forever"] = True
+                bot_ctx["comment_banned_forever"] = True
             else:
-                bot_ctx["state"]["comment_banned_until"] = time.time() + int(ban_time)
+                bot_ctx["comment_banned_until"] = time.time() + int(ban_time)
                 
         else:
             print(f"[-] We were banned.. but dont know why... (Server returned: {res_text}) Comment sleeping for 5 mins..")
@@ -210,7 +210,7 @@ def check_gd_errors(res_text, bot_ctx):
     return "ok"
 
 def upload_comment(text, bot_ctx):
-    if bot_ctx["state"].get("comment_banned_forever"):
+    if bot_ctx["comment_banned_forever"]:
         return True # Fail silently...
     if bot_ctx["state"].get("comment_banned_until", 0) > time.time():
         return True
@@ -246,6 +246,7 @@ def upload_comment(text, bot_ctx):
         if err_status == "1020":
             return False
         elif err_status == "banned":
+            print(f"[-] Currently comment banned!")
             return True # We pretend it works so it doesnt keep retrying in the queue
         if res == "-1":
             return False
@@ -330,7 +331,17 @@ def check_and_handle_commands(bot_ctx):
 
             if comment_processing.old_comments(bot_ctx, comment_data, user_data, comment_id, sender_player_id, sender_username): continue
 
-            if comment_id in processed_ids: continue
+            # Check if already processed
+            is_processed = False
+            for item in processed_ids:
+                if isinstance(item, dict) and item.get("id") == comment_id:
+                    is_processed = True
+                    break
+                elif item == comment_id: # Fallback :3
+                    is_processed = True
+                    break
+                    
+            if is_processed: continue
 
             # New comments!
             new_comments_detected = True
@@ -347,7 +358,14 @@ def check_and_handle_commands(bot_ctx):
                 bot_ctx["state"]["response_queue"].append(command_output)
                 command_detected = True
 
-            processed_ids.append(comment_id)
+            # Save comment details and user info
+            processed_ids.append({
+                "id": comment_id, 
+                "text": decoded_body,
+                "player_id": sender_player_id,
+                "username": sender_username
+            })
+
             if len(processed_ids) > 500:
                 processed_ids.pop(0)
                 
@@ -394,6 +412,7 @@ def main():
         "delete_comment": delete_comment,
         "vlog": vlog,
         "is_rate_limited": False,
+        "comment_banned_forever": False,
         "level_id": LEVEL_ID,
         "GD_USERNAME": GD_USERNAME,
         "GD_PASSWORD": GD_PASSWORD,
