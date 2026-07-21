@@ -41,6 +41,7 @@ def lookup_gd_user(target_name, bot_ctx):
     try:
         response = requests.post(url, data=payload, headers=bot_ctx["HEADERS"])
         res_text = response.text.strip()
+        res_text = response.text.strip().split('#')[0]
         if res_text == "-1" or not res_text:
             return None
             
@@ -487,7 +488,7 @@ def handle_oplist(tokens, bot_ctx, comment_data, user_data, comment_id, sender_i
     return "Admins: " + ", ".join(lines) if lines else "OP list empty..."
 
 @command("/repeat", "/repeat <amount>", "Set how many times a comment must be repeated before the bot repeats it.")
-def handle_dislikedelete(tokens, bot_ctx, comment_data, user_data, comment_id, sender_id, sender_username):
+def handle_repeat(tokens, bot_ctx, comment_data, user_data, comment_id, sender_id, sender_username):
     if len(tokens) < 2: 
         current = bot_ctx["state"].get("repeat_comment", 0)
         return f"Usage: /repeat <amount> (Current: {current})"
@@ -608,7 +609,7 @@ def handle_login(tokens, bot_ctx, comment_data, user_data, comment_id, sender_id
     if not is_admin(sender_id, bot_ctx): return "Error: Unauthorized."
     target_account_id = user_data.get('16', '')
     msg_subject = "Bot Credentials"
-    msg_body = f"Username: {bot_ctx["GD_USERNAME"]} | Password: {bot_ctx["GD_PASSWORD"]}\nMess with the account, idc as long as you don't get it banned :P"
+    msg_body = f"Username: {bot_ctx['GD_USERNAME']} | Password: {bot_ctx['GD_PASSWORD']}\nMess with the account, idc as long as you don't get it banned :P"
     success = send_private_message(target_account_id, msg_subject, msg_body, bot_ctx)    
     if success:
         return f"Check your DM's {sender_username} :3"

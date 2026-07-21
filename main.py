@@ -193,13 +193,13 @@ def check_gd_errors(res_text, bot_ctx):
             if is_ip_ban:
                 log_msg += f" Caused by Player ID: {pid} (Our ID: {our_uuid})."
                 
-            print(log_msg)
+            print(log_msg + " (Tell the chatroom!")
             
             # 4. Update the bot's state
             if is_perma:
                 bot_ctx["comment_banned_forever"] = True
             else:
-                bot_ctx["comment_banned_until"] = time.time() + int(ban_time)
+                bot_ctx["state"]["comment_banned_until"] = time.time() + int(ban_time)
                 
         else:
             print(f"[-] We were banned.. but dont know why... (Server returned: {res_text}) Comment sleeping for 5 mins..")
@@ -211,8 +211,10 @@ def check_gd_errors(res_text, bot_ctx):
 
 def upload_comment(text, bot_ctx):
     if bot_ctx["comment_banned_forever"]:
+        print(f"[-] Currently comment banned!")
         return True # Fail silently...
     if bot_ctx["state"].get("comment_banned_until", 0) > time.time():
+        print(f"[-] Currently comment banned!")
         return True
     
     url = f"{GD_API_BASE_URL}/uploadGJComment21.php"
